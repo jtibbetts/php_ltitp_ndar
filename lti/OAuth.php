@@ -84,14 +84,17 @@ abstract class OAuthSignatureMethod {
    * @return bool
    */
   public function check_signature($request, $consumer, $token, $signature) {
+//    syslog(LOG_WARNING, 'XXXX HMAC_SHA1 XXXX');
     $built = $this->build_signature($request, $consumer, $token);
 
     // Check for zero length, although unlikely here
     if (strlen($built) == 0 || strlen($signature) == 0) {
+//      syslog(LOG_WARNING, 'XXXX Zero length signature XXXX');
       return false;
     }
 
     if (strlen($built) != strlen($signature)) {
+//      syslog(LOG_WARNING, 'XXXX Signature mismatch XXXX');
       return false;
     }
 
@@ -100,6 +103,8 @@ abstract class OAuthSignatureMethod {
     for ($i = 0; $i < strlen($signature); $i++) {
       $result |= ord($built{$i}) ^ ord($signature{$i});
     }
+//    syslog(LOG_WARNING, "built: $built   signature: $signature");
+//    syslog(LOG_WARNING, 'XXXX ' . $result .  ' XXXX');
 
     return $result == 0;
   }
@@ -213,6 +218,7 @@ abstract class OAuthSignatureMethod_RSA_SHA1 extends OAuthSignatureMethod {
   }
 
   public function check_signature($request, $consumer, $token, $signature) {
+//    syslog(LOG_WARNING, 'XXXX RSA signature XXXX');
     $decoded_sig = base64_decode($signature);
 
     $base_string = $request->get_signature_base_string();
@@ -273,12 +279,14 @@ class OAuthRequest {
       // Find request headers
       $request_headers = OAuthUtil::get_headers();
 
+      // Note: patched in re: SPV conversation
       // Parse the query-string to find GET parameters
       if (isset($_SERVER['QUERY_STRING'])) {
         $parameters = OAuthUtil::parse_parameters($_SERVER['QUERY_STRING']);
       } else {
         $parameters = array();
       }
+
 
       // It's a POST request of the proper content-type, so parse POST
       // parameters and add those overriding any duplicates from GET
@@ -666,12 +674,16 @@ class OAuthServer {
     $signature_method = $this->get_signature_method($request);
 
     $signature = $request->get_parameter('oauth_signature');
+
     $valid_sig = $signature_method->check_signature(
       $request,
       $consumer,
       $token,
       $signature
     );
+
+//    syslog(LOG_WARNING, "XXXX Valid signature: $valid_sig XXXXX");
+
 
     if (!$valid_sig) {
       throw new OAuthException("Invalid signature");

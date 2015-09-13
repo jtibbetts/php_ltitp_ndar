@@ -13,6 +13,8 @@ class Ndar_LTI_Tool_Provider extends LTI_Tool_Provider {
         $roleString = implode('|', $this->user->roles);
         if (stripos($roleString, "Instructor")) {
             $location = $ndarBase . '/adminLogin?email=ltiuser@kinexis.com&password=lticlass';
+        } else {
+            $location = $ndarBase;
         }
         header("Location: " . $location);
         die();
